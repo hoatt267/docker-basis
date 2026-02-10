@@ -1,0 +1,27 @@
+# --- 1. Rác của IDE (Visual Studio, VS Code) ---
+
+.dockerignore
+Dockerfile
+.git
+.gitignore
+.vs/
+.vscode/
+_.suo
+_.user
+
+# --- 2. Rác biên dịch của .NET (CỰC QUAN TRỌNG) ---
+
+**/bin/
+**/obj/
+
+# --- 3. Các file bí mật/nhạy cảm ---
+
+appsettings.Development.json
+\*.env
+secrets.json
+
+# --- 4. Các file không cần thiết cho Production ---
+
+\*.md
+README.md
+Tests/

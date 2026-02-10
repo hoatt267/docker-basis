@@ -1,0 +1,111 @@
+========================================================================
+DOCKER ROADMAP SUMMARY - GIAI ĐOẠN 0 ĐẾN 3
+Dành cho: .NET Developer
+Cập nhật: 10/02/2026
+========================================================================
+
+PHẦN 1: TƯ DUY HỆ THỐNG (CONCEPT)
+------------------------------------------------------------------------
+1. Container vs. Virtual Machine (VM)
+   - VM (Máy ảo):
+     + Cấu trúc: App Code + Libraries + Guest OS (Hệ điều hành riêng) + Phần cứng ảo.
+     + Đặc điểm: Nặng, khởi động lâu, tốn RAM/CPU vì mỗi VM chạy một OS riêng.
+     + Dùng khi: Cần bảo mật tuyệt đối, cách ly tài nguyên phần cứng, chạy nhiều OS khác nhau.
+   - Container (Docker):
+     + Cấu trúc: App Code + Libraries + Dùng chung nhân (Shared Kernel) của Host OS.
+     + Đặc điểm: Siêu nhẹ, khởi động tính bằng giây, tiết kiệm tài nguyên.
+     + Dùng khi: Deploy ứng dụng Web/Microservices, CI/CD, môi trường Dev/Test/Prod đồng nhất.
+
+2. Ánh xạ tư duy Lập trình (OOP)
+   - Image      = Class   (Khuôn mẫu, Tĩnh, Read-only). Build 1 lần, chạy ở mọi nơi.
+   - Container  = Object  (Thực thể, Động, Read-write). New ra từ Image. Dữ liệu mất khi xóa.
+   - Docker Hub = NuGet   (Kho chứa thư viện/Image).
+   - Dockerfile = Code .cs (File hướng dẫn cách build ra Image).
+
+PHẦN 2: VÒNG ĐỜI & LỆNH SINH TỒN (COMMANDS)
+------------------------------------------------------------------------
+Quy trình chuẩn: Pull -> Build -> Run -> Stop -> Start -> Rm
+
+1. Quản lý Image (Nguyên liệu)
+   - Tải về:      docker pull [tên_image] (VD: docker pull nginx)
+   - Xây dựng:    docker build -t [tên_image_muốn_đặt] .
+     (*Lưu ý dấu chấm '.': Bảo Docker tìm Dockerfile tại thư mục hiện tại)
+   - Xóa image:   docker rmi [tên_image]
+
+2. Quản lý Container (Cái máy đang chạy)
+   - Tạo mới & Chạy (Quan trọng):
+     docker run -d -p [Port_Máy_Thật]:[Port_Container] --name [Tên] [Image]
+     + -d: Detached (Chạy ngầm).
+     + -p: Mapping Port (Cửa sổ). 
+       VD: -p 8080:80 -> Vào localhost:8080 sẽ chui vào cổng 80 của container.
+
+   - Kiểm tra:    docker ps (Xem cái đang chạy), docker ps -a (Xem cả cái đã tắt).
+   - Dừng:        docker stop [tên_container]
+   - Bật lại:     docker start [tên_container] (Dùng cho container đã tồn tại nhưng đang tắt).
+   - Xóa bỏ:      docker rm [tên_container] (Phải stop trước khi xóa, hoặc dùng -f).
+   - Xem log:     docker logs [tên_container] (Cực quan trọng để debug).
+
+PHẦN 3: XÂY DỰNG IMAGE (.NET CORE)
+------------------------------------------------------------------------
+1. Dockerfile
+   - Là tờ công thức nấu ăn.
+   - Với .NET, thường dùng Multi-stage build (2 giai đoạn):
+     + Stage 1 (SDK): Dùng để build code, restore nuget (Nặng).
+     + Stage 2 (Runtime): Chỉ chứa file .dll đã build (Nhẹ) để chạy.
+
+2. .dockerignore (Bắt buộc phải có)
+   - Tác dụng: Ngăn rác (bin, obj, .git, file nhạy cảm) bị copy vào Image.
+   - Hậu quả nếu thiếu: Build chậm, image nặng, lỗi xung đột OS (copy bin của Windows vào Linux).
+
+PHẦN 4: DỮ LIỆU (DATA PERSISTENCE)
+------------------------------------------------------------------------
+Vấn đề: Container là vật thay thế được. Xóa container = Mất dữ liệu.
+Giải pháp: Volume (Cái USB gắn ngoài).
+
+1. Bind Mount (-v C:\Path:/app)
+   - Map thư mục cụ thể của máy thật vào container.
+   - Dùng cho: Môi trường DEV (Sửa code máy thật -> Container cập nhật luôn).
+
+2. Named Volume (-v sql_data:/var/lib/sql)
+   - Docker tự quản lý vị trí lưu, đặt tên cho dễ nhớ.
+   - Dùng cho: DATABASE (An toàn, hiệu năng cao, tránh lỗi permission).
+   - Lệnh: docker volume create [tên], docker volume inspect [tên].
+
+PHẦN 5: MẠNG (NETWORKING) - CÁI BẪY LOCALHOST
+------------------------------------------------------------------------
+1. Vấn đề:
+   - WebAPI chạy trong container A gọi `Server=localhost` để tìm SQL.
+   - `localhost` lúc này là chính container A -> Không tìm thấy SQL -> Lỗi.
+
+2. Giải pháp: User-defined Bridge Network
+   - Bước 1: Tạo mạng (Router ảo) -> docker network create my-net
+   - Bước 2: Cho các container tham gia mạng này (--network my-net).
+   - Bước 3: Gọi nhau bằng TÊN CONTAINER (Magic DNS).
+     VD: ConnectionString="Server=my_sql_server;..."
+
+PHẦN 6: CÁC LỖI "ĐAU THƯƠNG" THƯỜNG GẶP (DEBUGGING)
+------------------------------------------------------------------------
+1. Lỗi Mapping Port sai (Ví dụ: -p 8080:82)
+   - Nguyên nhân: Cổng bên phải (Container Port) phải khớp với cổng phần mềm đang lắng nghe.
+   - Fix: Nginx nghe 80 -> Phải map vào :80. SQL nghe 1433 -> Phải map vào :1433.
+
+2. Lỗi SQL Server tự tắt ngay sau khi run
+   - Nguyên nhân: Mật khẩu SA quá yếu hoặc chưa chấp nhận điều khoản (EULA).
+   - Fix: Đặt pass có Hoa, thường, số, ký tự đặc biệt + Check log (`docker logs`).
+
+3. Lỗi "Access Denied" (Quyền ghi file Volume)
+   - Hiện tượng: Log báo lỗi "Setup FAILED copying system data file... Access is denied".
+   - Nguyên nhân: User `mssql` không có quyền ghi vào Volume do `root` tạo.
+   - Fix: Thêm tham số `--user root` vào lệnh docker run.
+
+4. Lỗi "Remote computer refused connection" (Kết nối SSMS thất bại)
+   - Nguyên nhân 1: Container chưa kịp khởi động xong (Đợi 30s).
+   - Nguyên nhân 2: Xung đột cổng với SQL trên máy thật. -> Fix: Map ra cổng khác (VD: -p 1435:1433).
+   - Nguyên nhân 3: SSMS không hiểu localhost. -> Fix: Dùng `127.0.0.1,[port]` hoặc IP của WSL.
+
+5. Nhầm lẫn "run" và "start"
+   - Lỗi: Gõ `docker run my_sql_server` khi máy đã tắt -> Báo lỗi "Image not found".
+   - Bản chất: `run` = Mua máy mới (Tạo container mới). `start` = Bật máy cũ lên.
+   - Fix: Dùng `docker start [tên_container]`.
+
+========================================================================

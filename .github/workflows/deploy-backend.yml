@@ -29,7 +29,7 @@ jobs:
           context: ./MyDockerApp
           push: true
           # Dùng github.sha để tạo tag duy nhất cho mỗi lần commit
-        tags: ${{ secrets.ACR_SERVER }}/backend:${{ github.sha }}
+          tags: ${{ secrets.ACR_SERVER }}/backend:${{ github.sha }}
 
       # 3. Deploy lên Azure App Service
       - name: Deploy to Azure Web App

@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "MyDockerApp/**" # Chỉ chạy khi code Backend thay đổi
+      - ".github/workflows/deploy-backend.yml" # Hoặc file workflow này thay đổi
 
 jobs:
   build-and-deploy:

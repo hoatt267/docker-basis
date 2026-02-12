@@ -5,6 +5,7 @@ on:
     branches: ["main"]
     paths:
       - "product-frontend/**" # Chỉ chạy khi code Frontend thay đổi
+      - ".github/workflows/deploy-frontend.yml" # Hoặc file workflow này thay đổi
 
 jobs:
   build-and-deploy:

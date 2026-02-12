@@ -35,6 +35,6 @@ jobs:
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
-          app-name: "tên-app-frontend-của-bạn" # Thay tên App Service FE vào đây
+          app-name: "test-docker-fe" # Thay tên App Service FE vào đây
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FE }}
           images: "${{ secrets.ACR_SERVER }}/frontend:latest"

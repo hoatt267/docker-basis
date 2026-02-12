@@ -15,8 +15,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=build /app/out .
 
-# Mở cổng 8080 trong container (NET 10 mặc định dùng 8080)
-EXPOSE 8080
+ENV ASPNETCORE_HTTP_PORTS=80
+# Mở cổng 80 trong container (NET 10 mặc định dùng 80)
+EXPOSE 80
 
 # Chạy file dll khi container khởi động
 ENTRYPOINT ["dotnet", "MyDockerApp.dll"]

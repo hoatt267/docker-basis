@@ -1,0 +1,40 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "product-frontend/**" # Chỉ chạy khi code Frontend thay đổi
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # 1. Login vào Azure Container Registry
+      - name: Docker Login
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.ACR_SERVER }}
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
+
+      # 2. Build và Push Docker Image (FE) - QUAN TRỌNG: Truyền Build Arg
+      - name: Build and push Frontend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./product-frontend
+          push: true
+          tags: ${{ secrets.ACR_SERVER }}/frontend:latest
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+
+      # 3. Deploy lên Azure App Service
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "tên-app-frontend-của-bạn" # Thay tên App Service FE vào đây
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FE }}
+          images: "${{ secrets.ACR_SERVER }}/frontend:latest"

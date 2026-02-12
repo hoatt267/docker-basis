@@ -27,7 +27,7 @@ services:
     depends_on:
       - sql-server-db
     ports:
-      - "8000:8080" # Map cổng 8000 ra máy thật
+      - "8000:80" # Map cổng 8000 ra máy thật
     environment:
       # Connection String: Gọi SQL qua tên container "sql-server-db"
       - ConnectionStrings__DefaultConnection=Server=sql-server-db;Database=TestDB;User Id=sa;Password=Password123!;TrustServerCertificate=True;

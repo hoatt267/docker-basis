@@ -128,7 +128,7 @@ function ProductManager() {
 
   return (
     <div className="product-manager">
-      <h1>🛍️ Quản lý Sản phẩm</h1>
+      <h1>🛍️ Quản lý Sản phẩm after build</h1>
 
       {error && <div className="error-message">{error}</div>}
 

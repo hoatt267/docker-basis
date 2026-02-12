@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+  # ==========================================
+  # 1. DATABASE (SQL SERVER)
+  # ==========================================
+  sql-server-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server-db
+    user: root # Chạy quyền root để tránh lỗi quyền ghi volume
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Password123!
+    ports:
+      - "1435:1433" # Cổng ngoài 1435 để SSMS kết nối
+    volumes:
+      - sql_data_vol:/var/opt/mssql/data
+    networks:
+      - my-network
+
+  # ==========================================
+  # 2. BACKEND (ASP.NET WEB API)
+  # ==========================================
+  web-api-app:
+    build: ./MyDockerApp # Đường dẫn tới folder chứa Dockerfile Backend
+    container_name: web-api-app
+    depends_on:
+      - sql-server-db
+    ports:
+      - "8000:8080" # Map cổng 8000 ra máy thật
+    environment:
+      # Connection String: Gọi SQL qua tên container "sql-server-db"
+      - ConnectionStrings__DefaultConnection=Server=sql-server-db;Database=TestDB;User Id=sa;Password=Password123!;TrustServerCertificate=True;
+      # CORS: Cho phép Frontend (localhost:3000) gọi vào
+      - AllowedClient__ClientUri=http://localhost:3000
+    networks:
+      - my-network
+
+  # ==========================================
+  # 3. FRONTEND (REACT/VITE)
+  # ==========================================
+  frontend-app:
+    build:
+      context: ./product-frontend # Đường dẫn folder code FE
+      args:
+        # --- ĐÂY LÀ CHỖ BẠN CẤU HÌNH API URL ---
+        # Lưu ý: Phải trỏ về http://localhost:8000 (Địa chỉ trình duyệt nhìn thấy)
+        - VITE_API_URL=http://localhost:8000/api/products
+    container_name: frontend-app
+    ports:
+      - "3000:80" # Web chạy cổng 3000
+    depends_on:
+      - web-api-app
+    networks:
+      - my-network
+
+# ==========================================
+# KHAI BÁO CHUNG
+# ==========================================
+volumes:
+  sql_data_vol:
+
+networks:
+  my-network:

@@ -1,0 +1,22 @@
+# --- Rác của hệ thống/IDE ---
+.dockerignore
+Dockerfile
+.git
+.gitignore
+.vscode/
+.idea/
+
+# --- Rác của Node.js (CỰC KỲ QUAN TRỌNG) ---
+node_modules/
+npm-debug.log
+
+# --- Rác Build cũ ---
+dist/
+build/
+
+# --- File môi trường (ĐỂ FIX LỖI CACHE ENV) ---
+# Chặn copy file .env vào image để Docker buộc phải dùng ARG từ docker-compose
+.env
+.env.local
+.env.development
+.env.production

@@ -1,0 +1,21 @@
+# --- Rác của IDE ---
+
+.dockerignore
+Dockerfile
+.git
+.gitignore
+.vs/
+.vscode/
+_.suo
+_.user
+
+# --- Rác biên dịch của .NET (QUAN TRỌNG) ---
+
+**/bin/
+**/obj/
+
+# --- File nhạy cảm ---
+
+appsettings.Development.json
+\*.env
+secrets.json

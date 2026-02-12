@@ -144,3 +144,93 @@ PHẦN 6: CẨM NANG GỠ LỖI (DEBUGGING & COMMON ERRORS)
    - `start`: Bật máy cũ (Bấm nút nguồn).
 
 ========================================================================
+
+========================================================================
+DOCKER ROADMAP SUMMARY - GIAI ĐOẠN 4: DOCKER COMPOSE
+Dành cho: .NET Developer
+Cập nhật: 12/02/2026
+========================================================================
+
+PHẦN 1: TẠI SAO CẦN DOCKER COMPOSE?
+------------------------------------------------------------------------
+- Vấn đề: Dùng `docker run` thủ công rất cực (dễ quên tham số, phải nhớ thứ tự chạy DB trước App sau, khó quản lý nhiều container).
+- Giải pháp: `docker-compose.yml`.
+  + Là một file văn bản mô tả toàn bộ hệ thống (Infrastructure as Code).
+  + Chỉ cần 1 lệnh để bật/tắt cả dàn server.
+
+PHẦN 2: CẤU TRÚC FILE DOCKER-COMPOSE.YML
+------------------------------------------------------------------------
+version: '3.8'  (Không bắt buộc ở bản mới)
+
+services:       # Nơi khai báo các container
+  ten-service-a:
+    image: ...  # Dùng image có sẵn
+    build: ...  # Hoặc build từ Dockerfile
+    ports:      # Map port (Ngoài:Trong)
+      - "8000:8080"
+    environment:# Biến môi trường (Runtime)
+      - KEY=VALUE
+    depends_on: # Thứ tự khởi động (Chờ thằng kia chạy trước)
+      - ten-service-b
+    networks:   # Tham gia mạng nào
+      - my-net
+
+volumes:        # Khai báo Volume chung (Persistent Data)
+  my-sql-data:
+
+networks:       # Khai báo Mạng chung
+  my-net:
+
+PHẦN 3: CÁC LỆNH "NHẠC TRƯỞNG" (CLI)
+------------------------------------------------------------------------
+Lưu ý: Bản mới dùng `docker compose` (không gạch nối).
+
+1. Khởi động hệ thống:
+   > docker compose up -d
+   (-d: Chạy ngầm).
+
+2. Ép build lại (Khi sửa code hoặc Dockerfile):
+   > docker compose up -d --build
+   (Cực quan trọng: Nếu không có --build, Docker sẽ dùng image cũ).
+
+3. Kiểm tra trạng thái:
+   > docker compose ps
+
+4. Xem log (Toàn bộ hoặc từng dịch vụ):
+   > docker compose logs -f [ten-service]
+
+5. Dọn dẹp (Tắt & Xóa container + Network):
+   > docker compose down
+   (Thêm `-v` nếu muốn xóa cả Volume dữ liệu -> Cẩn thận!).
+
+PHẦN 4: CHIẾN THUẬT FRONTEND & BACKEND (BEST PRACTICE)
+------------------------------------------------------------------------
+1. Backend (.NET/Node) - Runtime
+   - Dùng `environment:` trong file compose.
+   - Container khởi động mới đọc biến -> Ghi đè thoải mái.
+
+2. Frontend (React/Vite) - Build-time
+   - Vấn đề: Code chạy trên trình duyệt, không đọc được biến môi trường của Docker.
+   - Giải pháp: "Tiêm" biến lúc Build.
+     + Dockerfile: Khai báo `ARG` và gán vào `ENV`.
+     + Compose: Dùng `args:` dưới mục `build:`.
+     + .dockerignore: BẮT BUỘC phải ignore file `.env` để tránh Vite ưu tiên đọc file local.
+
+3. Giao tiếp mạng (Networking)
+   - Backend gọi SQL: Dùng **Tên Service** (VD: `Server=sql-server-db`). (Mạng nội bộ Docker).
+   - Frontend gọi Backend: Dùng **localhost:Port** (VD: `http://localhost:8000`). (Mạng Internet của người dùng).
+
+PHẦN 5: GỠ LỖI THƯỜNG GẶP
+------------------------------------------------------------------------
+1. Lỗi "Command not found":
+   - Do dùng bản cũ `docker-compose`. Hãy dùng `docker compose`.
+
+2. Lỗi Frontend không nhận API URL mới:
+   - Nguyên nhân: Vite cache file `.env` cũ.
+   - Fix: Thêm `.env` vào `.dockerignore` và chạy `docker compose up -d --build`.
+
+3. Lỗi "File not found" khi build:
+   - Nguyên nhân: Đường dẫn `context` trong compose sai.
+   - Fix: Kiểm tra lại `build: ./Duong/Dan/Dung`.
+
+========================================================================

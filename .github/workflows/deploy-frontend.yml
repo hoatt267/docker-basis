@@ -28,7 +28,7 @@ jobs:
         with:
           context: ./product-frontend
           push: true
-          tags: ${{ secrets.ACR_SERVER }}/frontend:latest
+          tags: ${{ secrets.ACR_SERVER }}/frontend:${{ github.sha }}
           build-args: |
             VITE_API_URL=${{ secrets.VITE_API_URL }}
 
@@ -38,4 +38,4 @@ jobs:
         with:
           app-name: "test-docker-fe" # Thay tên App Service FE vào đây
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_FE }}
-          images: "${{ secrets.ACR_SERVER }}/frontend:latest"
+          images: "${{ secrets.ACR_SERVER }}/frontend:${{ github.sha }}"

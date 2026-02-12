@@ -28,7 +28,8 @@ jobs:
         with:
           context: ./MyDockerApp
           push: true
-          tags: ${{ secrets.ACR_SERVER }}/backend:latest
+          # Dùng github.sha để tạo tag duy nhất cho mỗi lần commit
+        tags: ${{ secrets.ACR_SERVER }}/backend:${{ github.sha }}
 
       # 3. Deploy lên Azure App Service
       - name: Deploy to Azure Web App
@@ -36,4 +37,4 @@ jobs:
         with:
           app-name: "test-docker-be" # Thay tên App Service BE vào đây (VD: test-docker-be-...)
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_BE }}
-          images: "${{ secrets.ACR_SERVER }}/backend:latest"
+          images: "${{ secrets.ACR_SERVER }}/backend:${{ github.sha }}"

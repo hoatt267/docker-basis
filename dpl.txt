@@ -1,0 +1,81 @@
+Build Docker file + dockerignore + docker compose
+
+==================================================================
+Tạo Resource group
+Tạo Container Registries
+Tạo xong container vào access key bên left menu enable Admin user
+	login server: testdocker2.azurecr.io
+	name/username: testdocker2
+	password: Fze7aCv7zB2H0RMf689sJZK1QuBHTWwhkD0Pzn1Zq7nIg7NQ7blwJQQJ99CBACqBBLyEqg7NAAACAZCRZfNU
+CLI: az login
+CLI: docker login testdocker2.azurecr.io
+CLI: docker build -t testdocker2.azurecr.io/backend:v3 ./MyDockerApp
+CLI: docker push testdocker2.azurecr.io/backend:v3
+
+Tạo SQL Server
+	server: testdocker
+	username: myadmin
+	password: MyPassword123
+	
+Tạo App Service BE
+	name: test-docker-be
+Thêm connection strings cho SQL
+Thêm WEBSITES_PORT
+	
+Có được URL của BE => Set up arg cho FE
+CLI: docker build -t testdocker2.azurecr.io/frontend:v2 --build-arg VITE_API_URL="https://test-docker-be-cxgggfevgch8ezc2.southeastasia-01.azurewebsites.net/api/products" ./product-frontend
+CLI: docker push testdocker2.azurecr.io/frontend:v2
+	
+Tạo App Service FE
+	name: test-docker-fe
+	
+Thêm CORS(in API - base URL của app service FE)
+
+==================================================
+Trong app service của BE & FE => Setting => Configuration 
+	=> set On SCM Basic Auth Publishing Credentials
+	=> or FTP Basic Auth Publishing Credentials
+
+Dowload publish profile của BE & FE
+
+Vào Github repo => Setting => Secrets and variables => Actions => New repository secret
+	ACR_SERVER: 	Container
+	ACR_USERNAME:	Container
+	ACR_PASSWORD:	Container
+	AZURE_WEBAPP_PUBLISH_PROFILE_BE: file publish tải trước đó
+	AZURE_WEBAPP_PUBLISH_PROFILE_FE
+	VITE_API_URL:
+	
+tạo folder .github/workflows => Tạo file yml để config deploy
+
+Add enviroment trong appservice cho cả BE và FE
+	DOCKER_REGISTRY_SERVER_URL: 		https://testdocker2.azurecr.io
+	DOCKER_REGISTRY_SERVER_USERNAME: 	testdocker2
+	DOCKER_REGISTRY_SERVER_PASSWORD: 	Fze7aCv7zB2H0RMf689sJZK1QuBHTWwhkD0Pzn1Zq7nIg7NQ7blwJQQJ99CBACqBBLyEqg7NAAACAZCRZfNU
+
+=============NOT BEST PRACTICE==========================
+Set ON Continuous deployment của appservice trong deployment center
+kiểm tra trong container - phần webhook xem 2 cái webhook vừa bật đã enable chưa
+
+
+====================================================================
+Thuê 1 domain
+Appservice FE => Setting => Custom domain => Add custom domain
+Ở phần Domain provider, chọn All other domain services
+
+Add domain vừa thuê vào Domain
+Thấy 2 ô ở dưới
+CNAME: user-client-app-2026-hzh2azb3fdf9cbfr.southeastasia-01.azurewebsites.net
+TXT: F2E95FCA9CFD784C876107EFAF60E96C65CEFDB226D2E9F0CAD0D8752A58FB42
+
+Đăng nhập vào Namecheap Dashboard.
+Vào Domain List -> Bấm nút Manage cạnh tên miền của bạn.
+Chuyển sang tab Advanced DNS.
+Xóa hết các record mặc định (nếu có) để tránh xung đột.
+Thêm 2 Record mới (Bấm nút đỏ Add New Record) theo đúng bảng dưới đây:
+Type (Loại),		Host,		Value (Giá trị)
+CNAME Record,		www,		Dán cái CNAME Value từ Azure vào (vd: test-docker-fe...)
+TXT Record,a		suid.www,	Dán cái TXT Value (mã dài) từ Azure vào
+
+Sau khi add xong vào Add Binding, chọn Create và bấm Add
+sau đó config cors trong BE là thành công

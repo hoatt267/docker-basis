@@ -234,3 +234,84 @@ PHẦN 5: GỠ LỖI THƯỜNG GẶP
    - Fix: Kiểm tra lại `build: ./Duong/Dan/Dung`.
 
 ========================================================================
+
+========================================================================
+DOCKER ROADMAP SUMMARY - GIAI ĐOẠN 5: TỐI ƯU HÓA (PRODUCTION READY)
+Dành cho: .NET Developer
+Cập nhật: 14/02/2026
+========================================================================
+
+PHẦN 1: TƯ DUY TỐI ƯU (TẠI SAO PHẢI LÀM?)
+------------------------------------------------------------------------
+Khác biệt giữa "Chạy được" (Dev) và "Chạy tốt" (Prod):
+1. Kích thước (Size): Image nhỏ -> Deploy nhanh, tiết kiệm băng thông/phí lưu trữ Cloud.
+2. Độ tin cậy (Reliability): App phải tự đứng dậy sau khi ngã (Crash/Restart).
+3. Bảo mật (Security): Image càng ít công cụ thừa (như Alpine) -> Hacker càng khó xoay sở.
+
+PHẦN 2: CHIẾN THUẬT "GIẢM CÂN" IMAGE (ALPINE LINUX)
+------------------------------------------------------------------------
+1. Khái niệm:
+   - Image mặc định (.NET): Dùng Debian/Ubuntu -> Nặng (~300MB+), đầy đủ công cụ.
+   - Image Alpine: Dùng Alpine Linux -> Siêu nhẹ (<100MB), cắt bỏ mọi thứ không cần thiết.
+
+2. Cách thực hiện (Trong Dockerfile):
+   Thay vì: FROM mcr.microsoft.com/dotnet/aspnet:8.0
+   Dùng:    FROM mcr.microsoft.com/dotnet/aspnet:8.0-alpine
+
+3. LƯU Ý SỐNG CÒN VỚI .NET & ALPINE (ICU LIBS):
+   - Vấn đề: Alpine mặc định bỏ thư viện ICU (xử lý ngày tháng, tiền tệ quốc tế) để cho nhẹ.
+   - Hậu quả: Code .NET dùng `DateTime.Now` hoặc `ToString("C")` có thể bị lỗi hoặc sai định dạng.
+   - Cách Fix (Bắt buộc thêm vào Dockerfile):
+     ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+     RUN apk add --no-cache icu-libs
+
+PHẦN 3: CƠ CHẾ "BẤT TỬ" (RESTART POLICIES)
+------------------------------------------------------------------------
+Giúp Container tự khởi động lại khi gặp sự cố hoặc khi Server reboot.
+
+1. Cấu hình trong docker-compose.yml:
+   services:
+     web-api:
+       restart: unless-stopped  <-- (Khuyên dùng cho Prod)
+
+2. Các chế độ (Policies):
+   - `no`: Không bao giờ tự bật lại (Mặc định).
+   - `always`: Luôn bật lại (Kể cả khi bạn chủ động stop, lần sau khởi động Docker nó vẫn bật lại).
+   - `unless-stopped`: Luôn bật lại, TRỪ KHI bạn đã gõ lệnh stop trước đó (Thông minh nhất).
+   - `on-failure`: Chỉ bật lại khi App bị lỗi (Exit code khác 0).
+
+3. Lưu ý với Cloud (Azure/AWS):
+   - Trên Cloud App Service, nền tảng (Platform) thường có cơ chế tự hồi sinh container riêng.
+   - Việc config `restart` trong Compose không gây lỗi, nhưng Cloud sẽ ưu tiên cơ chế của nó hơn.
+
+PHẦN 4: DỌN DẸP HỆ THỐNG (HOUSEKEEPING)
+------------------------------------------------------------------------
+Sau nhiều lần build, máy sẽ đầy rác (Dangling images - `<none>`).
+
+1. Lệnh kiểm tra rác:
+   > docker images -f "dangling=true"
+
+2. Lệnh dọn dẹp (Nuclear Option):
+   > docker system prune
+   (Xóa container đã tắt, network không dùng, và image rác).
+   
+   > docker system prune -a
+   (Xóa SẠCH SÀNH SANH cả các image không được container nào dùng - Cẩn thận khi dùng).
+
+PHẦN 5: CHECKLIST TRƯỚC KHI PUSH LÊN AZURE (CI/CD)
+------------------------------------------------------------------------
+Khi bạn đã áp dụng Alpine và Restart policy:
+
+1. Dockerfile:
+   [ ] Đã chuyển sang tag `:alpine`?
+   [ ] Đã có lệnh cài `icu-libs`?
+   [ ] Đã set biến môi trường `Invariant=false`?
+
+2. Azure Portal (Configuration):
+   [ ] Kiểm tra xem có biến `DOTNET_SYSTEM_GLOBALIZATION_INVARIANT` bị set cứng là `true` không?
+       -> Nếu có: XÓA NGAY (Vì nó sẽ ghi đè cấu hình trong Dockerfile, gây lỗi app).
+
+3. Github Actions:
+   [ ] Không cần sửa gì cả. (Action sẽ tự build theo Dockerfile mới -> Ra Image nhẹ -> Azure tự pull về).
+
+========================================================================

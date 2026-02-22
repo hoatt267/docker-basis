@@ -79,3 +79,6 @@ TXT Record,a		suid.www,	Dán cái TXT Value (mã dài) từ Azure vào
 
 Sau khi add xong vào Add Binding, chọn Create và bấm Add
 sau đó config cors trong BE là thành công
+
+
+Push Code -> Github Action Build Image -> Push Image to Registry -> Azure Pull Image mới
